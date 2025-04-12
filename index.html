@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Movie Recommendation System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b1a2d;
+            color: #f4d03f;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #f4d03f;
+            margin-bottom: 30px;
+        }
+
+        .form-container {
+            background-color: #1e2f49;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 0 auto 40px auto;
+            box-shadow: 0 4px 10px rgba(244, 208, 63, 0.3);
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #f4d03f;
+            border-radius: 5px;
+            background-color: #0b1a2d;
+            color: #f4d03f;
+        }
+
+        button {
+            background-color: #f4d03f;
+            color: #0b1a2d;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #d4b02f;
+        }
+
+        .recommendations {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .movie-card {
+            background-color: #1e2f49;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(244, 208, 63, 0.2);
+        }
+
+        .movie-card h3 {
+            margin: 0 0 10px;
+            color: #f4d03f;
+        }
+
+        .movie-card p {
+            margin: 5px 0;
+        }
+
+        .movie-card a {
+            color: #f4d03f;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎬 Movie Recommendation System</h1>
+
+    <div class="form-container">
+        <form method="POST">
+            <label for="title">Search by Movie Title:</label>
+            <input type="text" id="title" name="title" placeholder="e.g., Inception">
+    
+            <hr style="margin: 20px 0; border: 1px solid #f4d03f;">
+    
+            <label for="genre">Filter by Genre:</label>
+            <input type="text" id="genre" name="genre" placeholder="e.g., Action, Drama">
+    
+            <label for="director">Director:</label>
+            <input type="text" id="director" name="director" placeholder="Optional">
+    
+            <label for="actor">Actor:</label>
+            <input type="text" id="actor" name="actor" placeholder="Optional">
+    
+            <button type="submit">Get Recommendations</button>
+        </form>
+    </div>
+    
+    {% if recommendations %}
+    <div class="recommendations">
+        <h2 style="text-align:center;">🎥 Recommended Movies</h2>
+        {% for movie in recommendations %}
+            <div class="movie-card">
+                <h3>{{ movie.title }}</h3>
+                <p><strong>Genre:</strong> {{ movie.genre }}</p>
+                <p><strong>Rating:</strong> {{ movie.rating }}</p>
+                <p><strong>Cast:</strong> {{ movie.cast }}</p>
+                {% if movie.imdbID %}
+                <p><a href="{{ url_for('movie_detail', imdb_id=movie.imdbID) }}">View Details & EDA ➡</a></p>
+                {% else %}
+                <p><em>Details unavailable</em></p>
+{% endif %}
+
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</body>
+</html>

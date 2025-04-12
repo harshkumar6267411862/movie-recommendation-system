@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Movie Details</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b1a2d;
+            color: #f4d03f;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: auto;
+            background-color: #1e2f49;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(244, 208, 63, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #f4d03f;
+        }
+
+        p {
+            margin: 12px 0;
+            font-size: 16px;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 30px;
+            text-align: center;
+            color: #f4d03f;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin: 30px;
+            font-size: 18px;
+        }
+
+        .section-title {
+            margin-top: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #d4b02f;
+        }
+
+        .eda-charts {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .eda-charts img {
+            width: 90%;
+            max-width: 700px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            box-shadow: 0 3px 8px rgba(244, 208, 63, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% elif movie %}
+            <h1>{{ movie.title }}</h1>
+            <p><strong>Genre:</strong> {{ movie.genre }}</p>
+            <p><strong>Rating:</strong> {{ movie.rating }}</p>
+            <p><strong>Cast:</strong> {{ movie.cast }}</p>
+            <p><strong>Director:</strong> {{ movie.director }}</p>
+
+            <div class="section-title">📊 EDA Summary</div>
+            {% if movie.runtime %}<p><strong>Runtime:</strong> {{ movie.runtime }} minutes</p>{% endif %}
+            {% if movie.language %}<p><strong>Language:</strong> {{ movie.language }}</p>{% endif %}
+            {% if movie.year %}<p><strong>Release Year:</strong> {{ movie.year }}</p>{% endif %}
+            {% if movie.country %}<p><strong>Country:</strong> {{ movie.country }}</p>{% endif %}
+            {% if movie.imdbVotes %}<p><strong>IMDB Votes:</strong> {{ movie.imdbVotes }}</p>{% endif %}
+            {% if movie.imdbID %}<p><strong>IMDB ID:</strong> {{ movie.imdbID }}</p>{% endif %}
+
+            <div class="eda-charts">
+                <img src="{{ url_for('static', filename='plots/rating_vs_genre.png') }}" alt="Rating vs Genre Average">
+                <img src="{{ url_for('static', filename='plots/genre_popularity_highlight.png') }}" alt="Genre Popularity Chart">
+                <img src="{{ url_for('static', filename='plots/director_rating_dist.png') }}" alt="Director Rating Distribution">
+            </div>
+        {% endif %}
+
+        <a class="back-link" href="{{ url_for('home') }}">⬅ Back to Home</a>
+    </div>
+</body>
+</html>
