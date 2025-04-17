@@ -60,8 +60,7 @@ def generate_movie_eda(df, movie):
         rating = 0
         
     df["rating"] = pd.to_numeric(df["rating"], errors="coerce")
-    
-    # Extract genre and filter
+
     genre = movie.get("genre", "").split(",")[0].strip()
     genre_movies = df[df["genre"].str.contains(genre, case=False, na=False)]
     
