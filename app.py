@@ -7,7 +7,7 @@ import seaborn as sns
 
 app = Flask(__name__)
 
-# Load your movie dataset
+
 df = pd.read_csv("Book1_converted.csv")
 
 # Setup logging
