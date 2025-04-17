@@ -64,7 +64,6 @@ def generate_movie_eda(df, movie):
     genre = movie.get("genre", "").split(",")[0].strip()
     genre_movies = df[df["genre"].str.contains(genre, case=False, na=False)]
     
-    # Handle edge cases
     avg_genre_rating = genre_movies["rating"].mean()
     if pd.isna(avg_genre_rating):
         avg_genre_rating = 0
