@@ -6,11 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 app = Flask(__name__)
-
-
 df = pd.read_csv("Book1_converted.csv")
-
-# Setup logging
 logging.basicConfig(level=logging.INFO)
 
 @app.route("/", methods=["GET", "POST"])
@@ -62,14 +58,7 @@ def generate_movie_eda(df, movie):
         rating = float(movie.get("rating", 0))
     except:
         rating = 0
-
-    # # Convert rating column to numeric (ignore errors like strings)
-    # df["rating"] = pd.to_numeric(df["rating"], errors="coerce")
-
-    # # 1. Rating vs Average Genre Rating
-    # genre_movies = df[df["genre"].str.contains(genre, case=False, na=False)]
-    # avg_genre_rating = genre_movies["rating"].mean()
-    # Convert rating column to numeric
+        
     df["rating"] = pd.to_numeric(df["rating"], errors="coerce")
     
     # Extract genre and filter
