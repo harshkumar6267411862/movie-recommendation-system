@@ -1,122 +1,83 @@
 from flask import Flask, render_template, request
 import pandas as pd
-import logging
-import os
-import matplotlib.pyplot as plt
-import seaborn as sns
+import numpy as np
+import joblib
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
 
 app = Flask(__name__)
+
+# Load dataset
 df = pd.read_csv("Book1_converted.csv")
-logging.basicConfig(level=logging.INFO)
+df['imdbID'] = df['imdbID'].astype(str).str.strip().str.lower()
+
+# Clean NaNs from important features
+df = df.dropna(subset=['imdbRating', 'imdbVotes'])
+
+# Create target column
+df['user_like'] = np.where(df['imdbRating'] >= 7, 1, 0)
+
+# Model features
+features = ['imdbRating', 'imdbVotes']
+X = df[features]
+y = df['user_like']
+
+# Train-test split and model
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+model = LogisticRegression()
+model.fit(X_train, y_train)
+joblib.dump(model, 'movie_recommendation_model.pkl')
+
+# Load trained model
+model = joblib.load('movie_recommendation_model.pkl')
 
 @app.route("/", methods=["GET", "POST"])
-def home():
+def index():
     recommendations = []
 
     if request.method == "POST":
-        title = request.form.get("title", "").strip().lower()
-        genre = request.form.get("genre", "").strip().lower()
-        director = request.form.get("director", "").strip().lower()
-        actor = request.form.get("actor", "").strip().lower()
+        title = request.form.get("title")
+        genre = request.form.get("genre")
+        director = request.form.get("director")
+        actor = request.form.get("actor")
 
-        filtered_df = df.copy()
+        filtered = df.copy()
 
         if title:
-            filtered_df = filtered_df[filtered_df["title"].fillna("").str.lower().str.contains(title)]
+            filtered = filtered[filtered['title'].str.contains(title, case=False, na=False)]
         if genre:
-            filtered_df = filtered_df[filtered_df["genre"].fillna("").str.lower().str.contains(genre)]
+            filtered = filtered[filtered['genre'].str.contains(genre, case=False, na=False)]
         if director:
-            filtered_df = filtered_df[filtered_df["director"].fillna("").str.lower().str.contains(director)]
+            filtered = filtered[filtered['director'].str.contains(director, case=False, na=False)]
         if actor:
-            filtered_df = filtered_df[filtered_df["cast"].fillna("").str.lower().str.contains(actor)]
+            filtered = filtered[filtered['cast'].str.contains(actor, case=False, na=False)]
 
-        recommendations = filtered_df.to_dict(orient="records")
+        recommendations = filtered.to_dict(orient='records')
+    else:
+        recommendations = df.head(20).to_dict(orient='records')
 
     return render_template("index.html", recommendations=recommendations)
 
 @app.route("/movie/<imdb_id>")
 def movie_detail(imdb_id):
-    imdb_id = str(imdb_id).strip()
-    logging.info(f"Received IMDB ID: {imdb_id}")
-    
-    movie_row = df[df["imdbID"].astype(str).str.strip() == imdb_id]
+    imdb_id = str(imdb_id).strip().lower()
+    movie = df[df['imdbID'] == imdb_id]
+    if movie.empty:
+        return "Movie not found."
+    return render_template("movie_detail.html", movie=movie.iloc[0])
 
-    if not movie_row.empty:
-        movie = movie_row.iloc[0].to_dict()
-        generate_movie_eda(df, movie)
-        return render_template("movie_detail.html", movie=movie)
-    else:
-        return render_template("movie_detail.html", movie=None, error="Movie not found.")
+@app.route("/predict/<imdb_id>")
+def predict_movie(imdb_id):
+    imdb_id = str(imdb_id).strip().lower()
+    movie = df[df['imdbID'] == imdb_id]
+    if movie.empty:
+        return "Movie not found."
 
-def generate_movie_eda(df, movie):
-    os.makedirs("static/plots", exist_ok=True)
+    features = movie[['imdbRating', 'imdbVotes']]
+    prediction = model.predict(features)[0]
+    result = "You might like this!" if prediction == 1 else "Probably not your favorite."
 
-    genre = movie.get("genre", "").split(",")[0].strip()
-    director = movie.get("director", "").strip()
-    
-    try:
-        rating = float(movie.get("rating", 0))
-    except:
-        rating = 0
-        
-    df["rating"] = pd.to_numeric(df["rating"], errors="coerce")
-
-    genre = movie.get("genre", "").split(",")[0].strip()
-    genre_movies = df[df["genre"].str.contains(genre, case=False, na=False)]
-    
-    avg_genre_rating = genre_movies["rating"].mean()
-    if pd.isna(avg_genre_rating):
-        avg_genre_rating = 0
-    
-    try:
-        rating = float(movie.get("rating", 0))
-    except:
-        rating = 0
-    
-    print(f"[DEBUG] Genre: {genre}")
-    print(f"[DEBUG] Selected Movie Rating: {rating}")
-    print(f"[DEBUG] Avg Genre Rating: {avg_genre_rating}")
-    print(f"[DEBUG] Number of genre-matched movies: {len(genre_movies)}")
-
-
-    plt.figure(figsize=(5, 4))
-    sns.barplot(x=["Selected Movie", "Genre Avg"], y=[rating, avg_genre_rating], palette=["gold", "blue"])
-    plt.title("Rating vs Genre Average")
-    plt.ylabel("Rating")
-    plt.tight_layout()
-    plt.savefig("static/plots/rating_vs_genre.png")
-    plt.close()
-
-    # 2. Genre Popularity
-    genre_counts = df["genre"].str.split(",").explode().str.strip().value_counts()
-    top_genres = genre_counts.head(10)
-
-    plt.figure(figsize=(7, 4))
-    bars = sns.barplot(x=top_genres.index, y=top_genres.values, palette="Blues")
-    for bar, label in zip(bars.patches, top_genres.index):
-        if genre.lower() in label.lower():
-            bar.set_color("gold")
-    plt.xticks(rotation=45)
-    plt.title("Genre Popularity (Highlighting Selected Movie's Genre)")
-    plt.ylabel("Number of Movies")
-    plt.tight_layout()
-    plt.savefig("static/plots/genre_popularity_highlight.png")
-    plt.close()
-
-    # 3. Director Movie Ratings
-    if director:
-        director_movies = df[df["director"].str.contains(director, case=False, na=False)]
-        director_movies["rating"] = pd.to_numeric(director_movies["rating"], errors="coerce")
-
-        plt.figure(figsize=(6, 4))
-        sns.histplot(director_movies["rating"].dropna(), bins=8, kde=True, color="skyblue", label=director)
-        plt.axvline(rating, color='gold', linestyle='--', label="Selected Movie")
-        plt.title(f"{director}'s Movies Rating Distribution")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig("static/plots/director_rating_dist.png")
-        plt.close()
-
+    return render_template("movie_detail.html", movie=movie.iloc[0], result=result)
 
 if __name__ == "__main__":
     app.run(debug=True)
